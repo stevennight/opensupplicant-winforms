@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -112,7 +112,10 @@ namespace OpenSupplicant
         public static Dictionary<byte, List<byte[]>> ParseResponseBody(byte[] buf)
         {
             //  DoS :数组溢出崩溃 2015/12/21
-            if (buf.Length <= 16) return null;
+            if (buf.Length <= 16)
+            {
+                return null;
+            }
 
             byte[] hash = new byte[16];
             for (byte i = 0; i < 16; i++)
@@ -128,7 +131,10 @@ namespace OpenSupplicant
 
             Dictionary<byte, List<byte[]>> ret = new Dictionary<byte, List<byte[]>>();
 
-            byte offset = 18;
+            //  返回消息长度过长超出byte范围(0-255)改用int。 16.02.28
+            //  表示不是很明白怎么看。不过调试看到offset好像会达到279。
+            //byte offset = 18;
+            int offset = 18;
             if (buf[0] == ACTION_CONFIRM_RET) offset += 3;  // 服务器BUG
 
             ret.Add(FIELD_ACTION, new List<byte[]>());
@@ -141,7 +147,9 @@ namespace OpenSupplicant
                 if (fieldName == FIELD_SESSION || fieldName == FIELD_MESSAGE) fieldLength += 2; // 服务器BUG
 
                 byte[] fieldValue = new byte[fieldLength];
-                for (byte i = 0; i < fieldLength; i++)
+                //改用int 16.02.28
+                //for (byte i = 0; i < fieldLength; i++)
+                for (int i = 0; i < fieldLength; i++)
                 {
                     fieldValue[i] = buf[offset + 2 + i];
                 }
@@ -153,7 +161,9 @@ namespace OpenSupplicant
 
                 ret[fieldName].Add(fieldValue);
 
-                offset += (byte)(fieldLength + 2);
+                //offset改用int 16.02.28
+                //offset += (byte)(fieldLength + 2);
+                offset += fieldLength + 2;
             }
 
             return ret;
